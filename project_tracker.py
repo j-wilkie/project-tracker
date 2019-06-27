@@ -1,9 +1,11 @@
 import tkinter
 import time
 import csv
+import serial   #You need to install pySerial
+import queue
+import threading
 
-# Uses keyboard keys '1' '2' and '3' for selecting projects. 
-# Currently window must be in focus when pressing keys.
+# Uses arduino with 3 buttons for selecting projects. 
 # Click save button to save to csv (will be named project_time_stamps.csv)
 # csv must be closed when you click save
 # Currently hard coded project names
@@ -11,17 +13,26 @@ import csv
 class GUI:
     def __init__(self, master):
         self.master = master
-        self.projectManager = ProjectManager() # Create an instance of ProjectManager class 
-        self.master.bind("<KeyPress>", self.key_pressed) # Listen for any key press and call key_pressed function
+        self.project_manager = ProjectManager() # Create an instance of ProjectManager class 
+        self.set_up_serial()
         self.create_save_button()
 
-    # Will only get called in frame in focus (not ideal)
-    def key_pressed(self, e):
-        if(e.char == '1' or e.char == '2' or e.char == '3'):
-            self.projectManager.key_press(e.char) 
+    # set_up_serial and poll_queue should probably be moved to a seperate class
+    def set_up_serial(self):
+        self.queue = queue.Queue()
+        SerialThread(self.queue).start()
+        self.master.after(100, self.poll_queue)
+
+    def poll_queue(self):
+        try:
+            msg = self.queue.get(0)   
+            self.project_manager.key_press(msg[0])
+            self.master.after(100, self.poll_queue)
+        except queue.Empty:
+            self.master.after(100, self.poll_queue)
 
     def create_save_button(self):
-        self.save_button = tkinter.Button(self.master, command= self.projectManager.save_task_durations)
+        self.save_button = tkinter.Button(self.master, command= self.project_manager.save_task_durations)
         self.save_button.configure(
             text="Save", background="Grey", 
             padx=50
@@ -46,6 +57,18 @@ class ProjectManager:
                 for duration in self.project_time_stamps[key]:
                     f.write("{},".format(duration))
                 f.write('\n')
+
+class SerialThread(threading.Thread):
+    def __init__(self, queue):
+        threading.Thread.__init__(self)
+        self.queue = queue  # Queue is a shared data structure with gui thread used to pass data between two threads
+        self.arduino = serial.Serial('COM5', 115200, timeout=.1) # Sets up serial connection with arduino. First argument is dependent on which usb port arduino is using. Second argument must match what is set in arduino code
+
+    def run(self):
+        while True:
+            data = self.arduino.readline()[:-1] # readline is a blocking call
+            if data:
+                self.queue.put(data.decode('UTF-8'))
 
 root = tkinter.Tk()
 root.title("Test")
