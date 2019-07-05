@@ -3,25 +3,26 @@ import time
 import csv
 from collections import defaultdict
 
-# Uses keyboard keys '1' '2' and '3' for selecting projects. 
+# Uses keyboard keys '1' '2' '3' '4' '5' and '6' for selecting projects. 
 # Currently window must be in focus when pressing keys.
 # Click export button to export to csv (will be named project_time_stamps.csv)
 # csv must be closed when you click save
 
 class GUI:
     def __init__(self, master):
+        self.num_of_buttons = 6
         self.master = master
-        self.projectManager = ProjectManager() # Create an instance of ProjectManager class 
+        self.projectManager = ProjectManager(self.num_of_buttons) # Create an instance of ProjectManager class 
         self.master.bind("<KeyPress>", self.key_pressed) # Listen for any key press and call key_pressed function
-        self.create_project_name_inputs(3)
+        self.create_project_name_inputs(self.num_of_buttons)
         self.create_export_button()
         self.num_proj_names_in_edit_mode = 0 # Used to allow numbers in project names without counting as a button press
 
     # Will only get called if frame in focus (not ideal)
     def key_pressed(self, e):
-        if((e.char == '1' or e.char == '2' or e.char == '3') 
-            and self.num_proj_names_in_edit_mode == 0): # If 1 or more project names in input mode ignore button press, should warn user
-            self.projectManager.key_press(e.char) 
+        for i in range(1, self.num_of_buttons + 1):
+            if(int(e.char) == i and self.num_proj_names_in_edit_mode == 0): # If 1 or more project names in input mode ignore button press (should add warning to user)
+                self.projectManager.key_press(e.char) 
 
     # Each input is made of a label, an entry input and a button that disables and enables the input
     def create_project_name_inputs(self, num_inputs):
@@ -63,12 +64,14 @@ class GUI:
         self.save_button.configure(
             text="Export", padx=5
         )
-        self.save_button.grid(row = 4, column = 2)
+        self.save_button.grid(row = self.num_of_buttons + 1, column = 2)
 
 class ProjectManager:
-    def __init__(self):
+    def __init__(self, num_of_buttons):
         self.project_time_stamps = defaultdict(list)
-        self.project_names = {1: "Project 1", 2:"Project 2", 3:"Project 3"}
+        self.project_names = defaultdict(str)
+        for i in range(1, num_of_buttons + 1):
+            self.project_names[i] = "Project {}".format(i)
         self.selected_proj = ""
 
     def key_press(self, key):
