@@ -1,34 +1,23 @@
-
-const int button1Pin = 52;
-const int button2Pin = 50;
-const int button3Pin = 48;
-const int led1Pin = 42;
-const int led2Pin = 44;
-const int led3Pin = 46;
+const int numButtons = 6;
+const int buttonPins[] = {10, 9, 8, 14, 12, 11};
+const int ledPins[] = {4, 3, 2, 7, 6, 5};
 int buttonOn = -1;
 
 void setup() {
   Serial.begin(115200);
-  pinMode(button1Pin, INPUT_PULLUP);
-  pinMode(button2Pin, INPUT_PULLUP);
-  pinMode(button3Pin, INPUT_PULLUP);
-  pinMode(led1Pin, OUTPUT);
-  pinMode(led2Pin, OUTPUT);
-  pinMode(led3Pin, OUTPUT);
+  for(int i = 0; i < numButtons; i++) {
+    pinMode(buttonPins[i], INPUT_PULLUP);
+    pinMode(ledPins[i], OUTPUT);
+  }
 }
 
 void loop() {
-  if (digitalRead(button1Pin) == LOW) {
-    buttonPressed(1);
-    delay(200);
-  } else if (digitalRead(button2Pin) == LOW) {
-    buttonPressed(2);
-    delay(200);
-  } else if (digitalRead(button3Pin) == LOW) {
-    buttonPressed(3);
-    delay(200);
+  for(int i = 0; i < numButtons; i++) {
+    if(digitalRead(buttonPins[i]) == LOW) {
+      buttonPressed(i+1);
+      delay(300);
+    }
   }
-  
 }
 
 void buttonPressed(int buttonId) {
@@ -44,23 +33,11 @@ void buttonPressed(int buttonId) {
 }
 
 void turnOnLed(int buttonId) {
-  if (buttonId == 1) {
-    digitalWrite(led1Pin, HIGH);  
-  } else if (buttonId == 2) {
-    digitalWrite(led2Pin, HIGH);
-  } else if (buttonId == 3) {
-    digitalWrite(led3Pin, HIGH);
-  }
+  digitalWrite(ledPins[buttonId-1], HIGH);
 }
 
 void turnOffLed(int buttonId) {
-  if (buttonId == 1) {
-    digitalWrite(led1Pin, LOW);  
-  } else if (buttonId == 2) {
-    digitalWrite(led2Pin, LOW);
-  } else if (buttonId == 3) {
-    digitalWrite(led3Pin, LOW);
-  }
+  digitalWrite(ledPins[buttonId-1], LOW);
 }
 
 void stopCurrentTask() {
@@ -70,4 +47,4 @@ void stopCurrentTask() {
     Serial.print("f\n");
     buttonOn = -1;
   }
- }
+}
